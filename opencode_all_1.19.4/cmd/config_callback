@@ -1,3 +1,0 @@
-#!/bin/bash
-# config_callback：设置保存后（预留；当前设置项由应用 Web 页自理）
-exit 0
