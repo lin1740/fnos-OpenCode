@@ -1,0 +1,13 @@
+{
+    ".url": {
+        "opencode.Application": {
+            "title": "OpenCode",
+            "icon": "images/icon_{0}.png",
+            "type": "iframe",
+            "gatewayPrefix": "/app/opencode",
+            "gatewaySocket": "app.sock",
+            "url": "/app/opencode/",
+            "allUsers": true
+        }
+    }
+}
