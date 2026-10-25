@@ -1,0 +1,8 @@
+#!/bin/bash
+# upgrade_init：升级前（见 uninstall_init 的升级守卫，已统一处理停止服务）
+set +e
+LOG_DIR="${TRIM_PKGVAR:-/var/apps/opencode/var}"
+mkdir -p "$LOG_DIR" 2>/dev/null
+exec >> "$LOG_DIR/upgrade_init.log" 2>&1
+echo "[$(date '+%F %T')] upgrade_init：旧版 ${TRIM_OLD_APPVER:-未知} -> 新版，服务已由 uninstall_init 停止"
+exit 0
