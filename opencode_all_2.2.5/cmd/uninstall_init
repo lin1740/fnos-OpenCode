@@ -1,0 +1,45 @@
+#!/bin/bash
+# uninstall_init：卸载/升级前脚本
+# 原则：任何情况下不返回非 0（飞牛会判定"执行脚本出错"）；升级流程不做破坏性操作
+set +e
+
+LOG_DIR="${TRIM_PKGVAR:-/var/apps/opencode/var}"
+APP_DEST="${TRIM_APPDEST:-/var/apps/opencode/target}"
+mkdir -p "$LOG_DIR" 2>/dev/null
+exec >> "$LOG_DIR/uninstall_init.log" 2>&1
+
+echo "========================================"
+echo "[$(date '+%F %T')] uninstall_init 开始"
+echo "  TRIM_APP_STATUS=${TRIM_APP_STATUS:-<未设置>}"
+echo "  TRIM_OLD_APPVER=${TRIM_OLD_APPVER:-<未设置>}"
+echo "  TRIM_TEMP_UPGRADE_FOLDER=${TRIM_TEMP_UPGRADE_FOLDER:-<未设置>}"
+echo "========================================"
+
+# 升级守卫：升级流程只停服务（新包覆盖前必须先停进程），不做其他清理
+IS_UPGRADE=0
+if [ "$TRIM_APP_STATUS" = "UPGRADE" ]; then IS_UPGRADE=1; fi
+if [ -n "${TRIM_OLD_APPVER:-}" ]; then IS_UPGRADE=1; fi
+if [ -n "${TRIM_TEMP_UPGRADE_FOLDER:-}" ]; then IS_UPGRADE=1; fi
+if [ "${TRIM_APP_OP:-}" = "upgrade" ]; then IS_UPGRADE=1; fi
+
+# 无论升级还是卸载都要先停服务（二进制文件即将被替换/删除）
+GW=""
+case "$(uname -m)" in
+    aarch64|arm64) GW="$APP_DEST/server/gateway_arm64" ;;
+    *)             GW="$APP_DEST/server/gateway_amd64" ;;
+esac
+if [ -x "$GW" ]; then
+    TRIM_APPDEST="$APP_DEST" TRIM_PKGVAR="$LOG_DIR" "$GW" stop 2>/dev/null
+    echo "[$(date '+%F %T')] 已通知网关停止"
+fi
+rm -f "$APP_DEST/app.sock" 2>/dev/null
+
+# 兜底清理本应用进程（按 cmdline 双重特征匹配，不误伤其他应用）
+for _p in $(ps -eo pid,args 2>/dev/null | grep -E 'opencode-linux-(x64|arm64)|gateway_(amd64|arm64)' | grep -F 'opencode' | grep -v grep | awk '{print $1}'); do
+    [ "$_p" = "$$" ] && continue
+    kill -9 "$_p" 2>/dev/null
+done
+rm -f "$LOG_DIR"/gateway.pid "$LOG_DIR"/serve.pid "$LOG_DIR"/gateway.lock 2>/dev/null
+
+echo "[$(date '+%F %T')] uninstall_init 完成（升级=$IS_UPGRADE），正常退出"
+exit 0

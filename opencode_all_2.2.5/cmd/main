@@ -1,0 +1,54 @@
+#!/bin/bash
+# opencode 主启动脚本：start / stop / status（status 退出码 0=运行 3=停止）
+# 实际工作全部由 Go 网关二进制承担（本脚本只做胶水）
+
+APP_DEST="${TRIM_APPDEST:-/var/apps/opencode/target}"
+VAR_DIR="${TRIM_PKGVAR:-/var/apps/opencode/var}"
+LOG="$VAR_DIR/main.log"
+
+mkdir -p "$VAR_DIR" 2>/dev/null
+
+log() { echo "[$(date '+%F %T')] $1" >> "$LOG" 2>/dev/null; }
+
+gw_binary() {
+    case "$(uname -m)" in
+        aarch64|arm64) echo "$APP_DEST/server/gateway_arm64" ;;
+        *)             echo "$APP_DEST/server/gateway_amd64" ;;
+    esac
+}
+
+GW="$(gw_binary)"
+
+start() {
+    log "=== 启动 opencode ==="
+    if [ ! -x "$GW" ]; then
+        log "错误：网关二进制缺失或不可执行：$GW"
+        exit 1
+    fi
+    TRIM_APPDEST="$APP_DEST" TRIM_PKGVAR="$VAR_DIR" "$GW" start >> "$LOG" 2>&1
+    log "start 完成"
+}
+
+stop() {
+    log "=== 停止 opencode ==="
+    if [ -x "$GW" ]; then
+        TRIM_APPDEST="$APP_DEST" TRIM_PKGVAR="$VAR_DIR" "$GW" stop >> "$LOG" 2>&1
+    fi
+    rm -f "$APP_DEST/app.sock" 2>/dev/null
+    log "stop 完成"
+}
+
+status() {
+    if [ ! -x "$GW" ]; then
+        exit 3
+    fi
+    TRIM_APPDEST="$APP_DEST" TRIM_PKGVAR="$VAR_DIR" "$GW" status >/dev/null 2>&1
+    exit $?
+}
+
+case "${1:-start}" in
+    start)  start ;;
+    stop)   stop ;;
+    status) status ;;
+    *)      echo "用法：$0 {start|stop|status}"; exit 1 ;;
+esac
