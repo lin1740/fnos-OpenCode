@@ -39,7 +39,7 @@ This repository is a **third-party, unofficial packaging** of [OpenCode](https:/
 
 #### 2.1.2 Known Defects
 
-1. **Mobile is the weaker link**: 2.2.7 fixed the earlier "blank page / endless spinner" on phones (gateway-side path rewriting, clearing legacy Service Workers, a small mobile compatibility layer). Desktop Chrome / Edge / Firefox and mobile viewports have been verified, but **real-device coverage across HarmonyOS and the Android fnOS app's embedded WebView is not exhaustive**. Some models may still show misaligned UI, missing controls or a silent send button — please report with phone model and OS version.
+1. **Mobile is the weaker link**: desktop Chrome / Edge / Firefox and mobile viewports are verified. Since 2.3.2 the gateway merges the frontend's duplicate event-stream subscriptions into a single connection — under HTTP/1.1 a browser allows only six connections per origin, and streams filling that pool make the send request queue, which looks like a dead send button. **Real-device coverage across HarmonyOS and the Android fnOS app's embedded WebView is still not exhaustive**: some models may show misaligned UI, missing controls or a silent send button — please report with phone model and OS version.
 2. **Stale browser cache can reproduce old problems**: after an upgrade, if the page is still blank or spinning, disable and re-enable the app in App Center, then clear the site cache in the browser — an old Service Worker may still be in control.
 3. **Compatibility patches are coupled to the upstream page structure**: the gateway rewrites the entry prefix and injects a compatibility layer into the response stream, which depends on upstream frontend structure. **Large upstream frontend changes can cause misalignment, dead buttons or failed requests** until the package is re-adapted.
 4. **Upgrades and restarts interrupt sessions**: upgrading or toggling the app restarts the service, aborting running AI tasks. Upgrade when idle.
@@ -89,7 +89,7 @@ Requirements:
 
 1. fnOS ≥ 1.1.8 (`os_min_version`); architecture must be x86_64 or aarch64 (ARM64). Other architectures are rejected by the pre-install check.
 2. RAM ≥ 1GB (enforced by the pre-install check); 2GB+ recommended for AI sessions and indexing.
-3. Package size ~**235MB**; installed program files ~**512MB** (both architectures are included). Project files depend on what you put in.
+3. Package size ~**248MB**; installed program files ~**520MB** (both architectures are included). Project files depend on what you put in.
 4. Installation is fully offline — no image pulls, no dependency downloads. Usually **20–60 seconds**.
 5. The installer wizard only has two informational pages ("Installation notes" and "Security notes"); there are **no port or path fields** — paths are fixed to avoid misconfiguration.
 
