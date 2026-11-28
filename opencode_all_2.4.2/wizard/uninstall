@@ -1,0 +1,57 @@
+[
+  {
+    "stepTitle": "数据存放位置",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "卸载前请了解你的数据在哪里：<br><b>应用数据</b>（API Key、配置、会话记录）：<code>/vol1/@appdata/opencode</code> 与 <code>/vol1/@apphome/opencode</code><br><b>项目文件</b>：应用数据区内的项目目录（管理员视角：文件管理 → 管理员视角 → 设备全部文件 → 存储空间1（按实际存储空间为准）→ @appdata → opencode → projects → 我的项目；需管理员账号查看）。<br><b>默认全部保留</b>：重新安装后数据原样可用。"
+      }
+    ]
+  },
+  {
+    "stepTitle": "应用数据",
+    "items": [
+      {
+        "type": "radio",
+        "field": "wizard_keep_data",
+        "label": "是否保留应用数据（配置、API Key、会话）？",
+        "initValue": "keep",
+        "options": [
+          {
+            "label": "保留（推荐，重装后无需重新配置）",
+            "value": "keep"
+          },
+          {
+            "label": "删除（清空 API Key、配置与会话记录，不可恢复）",
+            "value": "delete"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "stepTitle": "项目文件",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "项目目录里是你的<b>项目代码与文件</b>。<b>强烈建议保留</b>——即使卸载应用，你也可以继续使用这些文件。"
+      },
+      {
+        "type": "radio",
+        "field": "wizard_keep_projects",
+        "label": "是否保留项目文件？",
+        "initValue": "keep",
+        "options": [
+          {
+            "label": "保留（推荐，项目文件与 AI 无关，卸载不影响使用）",
+            "value": "keep"
+          },
+          {
+            "label": "一并删除项目目录（⚠ 项目代码将被永久删除，不可恢复）",
+            "value": "delete"
+          }
+        ]
+      }
+    ]
+  }
+]
