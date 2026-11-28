@@ -89,7 +89,7 @@ Requirements:
 
 1. fnOS ≥ 1.1.8 (`os_min_version`); architecture must be x86_64 or aarch64 (ARM64). Other architectures are rejected by the pre-install check.
 2. RAM ≥ 1GB (enforced by the pre-install check); 2GB+ recommended for AI sessions and indexing.
-3. Package size ~**264MB**; installed program files ~**556MB** (both architectures are included). Project files depend on what you put in.
+3. Package size ~**264MB**; installed program files ~**557MB** (both architectures are included). Project files depend on what you put in.
 4. Installation is fully offline — no image pulls, no dependency downloads. Usually **20–60 seconds**.
 5. The installer wizard only has two informational pages ("Installation notes" and "Security notes"); there are **no port or path fields** — paths are fixed to avoid misconfiguration.
 
