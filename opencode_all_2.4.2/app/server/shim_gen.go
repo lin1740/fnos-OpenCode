@@ -250,13 +250,46 @@ const RUNTIME_SHIM = `(function(){
         window.Request=NR;
       }
     }catch(e){}
+    // 失效会话自愈：手机端保存了上次打开的会话地址，会话被删后应用拿到 404，
+    // 界面只显示标题和旧消息、输入框直接不渲染（表现为「历史上一直修不好的手机端」）。
+    // 这里在会话详情请求返回 404 时清掉本地「上次路由」并回到应用首页；
+    // 用 sessionStorage 做一次性保护，避免任何情况下形成重定向循环。
+    function staleSession(){
+      try{
+        if(sessionStorage.getItem("__gw_stale_route")==="1")return;
+        sessionStorage.setItem("__gw_stale_route","1");
+      }catch(e){}
+      try{
+        for(var i=localStorage.length-1;i>=0;i--){
+          var k=localStorage.key(i);
+          if(k&&/last-route|last_route/i.test(k))localStorage.removeItem(k);
+        }
+      }catch(e){}
+      setTimeout(function(){
+        try{
+          if(location.pathname.indexOf("/session/")>=0||location.href.indexOf("/session/")>=0)
+            location.href=PB+"/";
+        }catch(e){}
+      },700);
+    }
+    function maybeStale(u,p){
+      try{
+        if(p&&p.then&&u&&/\/api\/session\/[^/?]+$/.test(u)){
+          return p.then(function(res){
+            try{ if(res&&res.status===404)staleSession(); }catch(e){}
+            return res;
+          });
+        }
+      }catch(e){}
+      return p;
+    }
     var _f=window.fetch;
     if(_f){
       window.fetch=function(input,init){
         try{
           var _eu=(typeof input==="string")?fix(input):((input&&input.url)?fix(input.url):"");
           if(_eu&&isEventUrl(_eu)){ var _ss=sseSubscribe(_eu); if(_ss)return _ss; }
-          if(typeof input==="string"){return _f.call(this,fix(input),init);}
+          if(typeof input==="string"){return maybeStale(_eu,_f.call(this,fix(input),init));}
           if(input&&input.url){
             var nu=fix(input.url);
             if(nu===input.url)return _f.call(this,input,init);
@@ -268,7 +301,7 @@ const RUNTIME_SHIM = `(function(){
             if(!p){
               // 旧 WebView 可能没有 Request.clone()：退回重建，至少 URL 带前缀能到达应用，
               // 不会被门户根路径吞掉（此时若丢 body，网关侧还有空 body 兜底）。
-              try{ return _f.call(self,new window.Request(nu,req),init); }catch(e2){ return _f.call(self,req,init); }
+              try{ return maybeStale(nu,_f.call(self,new window.Request(nu,req),init)); }catch(e2){ return maybeStale(nu,_f.call(self,req,init)); }
             }
             return p.then(function(txt){
               var opt={
@@ -279,11 +312,11 @@ const RUNTIME_SHIM = `(function(){
                 keepalive:req.keepalive, signal:req.signal
               };
               if(req.method!=="GET"&&req.method!=="HEAD")opt.body=txt;
-              return _f.call(self,nu,opt);
+              return maybeStale(nu,_f.call(self,nu,opt));
             });
           }
         }catch(e){}
-        return _f.call(this,input,init);
+        return maybeStale(_eu,_f.call(this,input,init));
       };
     }
     var _o=XMLHttpRequest.prototype.open;
