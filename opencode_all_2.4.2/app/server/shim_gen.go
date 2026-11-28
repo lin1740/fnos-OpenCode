@@ -132,7 +132,14 @@ const RUNTIME_SHIM = `(function(){
           rep("snap2",JSON.stringify({
             path:location.pathname,w:innerWidth,h:innerHeight,dpr:devicePixelRatio,
             txt:txt,ce:ce,spin:spin,els:document.querySelectorAll("*").length,
-            ready:document.readyState
+            ready:document.readyState,
+            send:(function(){var b=[...document.querySelectorAll('button')]
+              .find(function(x){return (x.textContent||'').trim()==='发送';});
+              return b?(b.disabled?'disabled':'enabled'):'no-btn';})(),
+            ctrls:[...document.querySelectorAll('button')]
+              .map(function(x){return x.getAttribute('aria-label')||'';})
+              .filter(function(v){return /模型|智能体|变体|图片/.test(v);}).slice(0,6),
+            api:JSON.stringify(window.__gwApi||{}).slice(0,260)
           }));
         }catch(e){ rep("snap2err",String(e&&e.message||e)); }
       },25000);
@@ -283,11 +290,16 @@ const RUNTIME_SHIM = `(function(){
       }catch(e){}
       return p;
     }
+    window.__gwApi={};
     var _f=window.fetch;
     if(_f){
       window.fetch=function(input,init){
         try{
           var _eu=(typeof input==="string")?fix(input):((input&&input.url)?fix(input.url):"");
+          try{
+            var _m=(_eu||"").match(/\/api\/([A-Za-z0-9_.-]+)/);
+            if(_m){var _k=_m[1];window.__gwApi[_k]=(window.__gwApi[_k]||0)+1;}
+          }catch(e){}
           if(_eu&&isEventUrl(_eu)){ var _ss=sseSubscribe(_eu); if(_ss)return _ss; }
           if(typeof input==="string"){return maybeStale(_eu,_f.call(this,fix(input),init));}
           if(input&&input.url){
@@ -382,6 +394,11 @@ const RUNTIME_SHIM = `(function(){
     }
     function _autoOpenProject(){
       try{
+        // 手机 / 内嵌 WebView 下这段自动点击会误点「新建会话」，把界面卡在
+        // /new-session「正在新建会话…」，输入框没有模型、发送永远禁用。
+        // 桌面保留自动打开项目，手机端交给用户手动点，行为与官方一致。
+        var _ua=(navigator.userAgent||"").toLowerCase();
+        if(/harmonyos|openharmony|arkweb|android|iphone|ipad/.test(_ua))return;
         if(sessionStorage.getItem("oc_auto_proj")==="1")return;
         var txt=document.body?document.body.innerText:"";
         if(!txt)return;
